@@ -46,6 +46,7 @@ except:
     
 gConfig = {}
 
+
 def get_config(config_file='seq2seq.ini'):
     parser = SafeConfigParser()
     parser.read(config_file)
@@ -101,10 +102,10 @@ def read_data(source_path, target_path, max_size=None):
 def create_model(session, forward_only):
 
   """Create model and initialize or load parameters"""
-  model = seq2seq_model.Seq2SeqModel( gConfig['enc_vocab_size'], gConfig['dec_vocab_size'], _buckets, gConfig['layer_size'], gConfig['num_layers'], gConfig['max_gradient_norm'], gConfig['batch_size'], gConfig['learning_rate'], gConfig['learning_rate_decay_factor'], forward_only=forward_only)
+  model = seq2seq_model.Seq2SeqModel(gConfig['enc_vocab_size'], gConfig['dec_vocab_size'], _buckets, gConfig['layer_size'], gConfig['num_layers'], gConfig['max_gradient_norm'], gConfig['batch_size'], gConfig['learning_rate'], gConfig['learning_rate_decay_factor'], forward_only=forward_only)
 
   if 'pretrained_model' in gConfig:
-      model.saver.restore(session,gConfig['pretrained_model'])
+      model.saver.restore(session, gConfig['pretrained_model'])
       return model
 
   ckpt = tf.train.get_checkpoint_state(gConfig['working_directory'])
@@ -125,7 +126,8 @@ def train():
   # prepare dataset
   print("Preparing data in %s" % gConfig['working_directory'])
   enc_train, dec_train, enc_dev, dec_dev, _, _ = data_utils.prepare_custom_data(gConfig['working_directory'],gConfig['train_enc'],gConfig['train_dec'],gConfig['test_enc'],gConfig['test_dec'],gConfig['enc_vocab_size'],gConfig['dec_vocab_size'])
-
+  print("vocabulary created.")
+  exit(0)
   # Only allocate 2/3 of the gpu memory to allow for running gpu-based predictions while training:
   gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.666)
   config = tf.ConfigProto(gpu_options=gpu_options)
@@ -137,7 +139,7 @@ def train():
     model = create_model(sess, False)
 
     # Read data into buckets and compute their sizes.
-    print ("Reading development and training data (limit: %d)."
+    print("Reading development and training data (limit: %d)."
            % gConfig['max_train_data_size'])
     dev_set = read_data(enc_dev, dec_dev)
     train_set = read_data(enc_train, dec_train, gConfig['max_train_data_size'])
@@ -283,6 +285,7 @@ def init_session(sess, conf='seq2seq.ini'):
 
     return sess, model, enc_vocab, rev_dec_vocab
 
+
 def decode_line(sess, model, enc_vocab, rev_dec_vocab, sentence):
     # Get token-ids for the input sentence.
     token_ids = data_utils.sentence_to_token_ids(tf.compat.as_bytes(sentence), enc_vocab)
@@ -304,6 +307,7 @@ def decode_line(sess, model, enc_vocab, rev_dec_vocab, sentence):
         outputs = outputs[:outputs.index(data_utils.EOS_ID)]
 
     return " ".join([tf.compat.as_str(rev_dec_vocab[output]) for output in outputs])
+
 
 if __name__ == '__main__':
     if len(sys.argv) - 1:

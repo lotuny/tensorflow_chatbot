@@ -47,7 +47,7 @@ def basic_tokenizer(sentence):
   """Very basic tokenizer: split the sentence into a list of tokens."""
   words = []
   for space_separated_fragment in sentence.strip().split():
-    words.extend(re.split(_WORD_SPLIT, space_separated_fragment))
+    words.extend(re.split(_WORD_SPLIT, bytes(space_separated_fragment, encoding='utf8')))
   return [w for w in words if w]
 
 
@@ -71,7 +71,7 @@ def create_vocabulary(vocabulary_path, data_path, max_vocabulary_size,
           else:
             vocab[word] = 1
       vocab_list = _START_VOCAB + sorted(vocab, key=vocab.get, reverse=True)
-      print('>> Full Vocabulary Size :',len(vocab_list))
+      print('>> Full Vocabulary Size :', len(vocab_list))
       if len(vocab_list) > max_vocabulary_size:
         vocab_list = vocab_list[:max_vocabulary_size]
       with gfile.GFile(vocabulary_path, mode="wb") as vocab_file:
@@ -100,8 +100,9 @@ def sentence_to_token_ids(sentence, vocabulary, tokenizer=None, normalize_digits
     words = basic_tokenizer(sentence)
   if not normalize_digits:
     return [vocabulary.get(w, UNK_ID) for w in words]
+
   # Normalize digits by 0 before looking words up in the vocabulary.
-  return [vocabulary.get(re.sub(_DIGIT_RE, b"0", w), UNK_ID) for w in words]
+  return [vocabulary.get(re.sub(_DIGIT_RE, b"0", w).decode(encoding='utf-8'), UNK_ID) for w in words]
 
 
 def data_to_token_ids(data_path, target_path, vocabulary_path,
